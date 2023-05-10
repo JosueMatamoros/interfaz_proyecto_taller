@@ -1,22 +1,12 @@
 import tkinter as tk
 from tkinter import ttk 
-from loigica import puntos_agenda, agenda
+from tkinter import filedialog # Importamos el módulo filedialog para abrir el explorador de archivos
+from loigica import puntos_agenda, agenda, seleccionar_archivo, seleccionar_carpeta_destino, dividir_audio
+
 
 def barra_menu(ventana):
     barra_menu = tk.Menu(ventana)
     ventana.config(menu=barra_menu)
-
-    menu_agenda = tk.Menu(barra_menu, tearoff=0) #Objeto para agenda.
-    barra_menu.add_cascade(label="Agenda", menu=menu_agenda)
-
-    menu_agenda.add_command(label="Agregar punto a la agenda")
-    menu_agenda.add_command(label="Eliminar punto a la agenda")
-    menu_agenda.add_command(label="Salir", command=ventana.destroy)
-
-    barra_menu.add_cascade(label="Participantes", menu=menu_agenda)
-    #se debe agaragar objeto y comando para participantes
-    barra_menu.add_cascade(label="Divisor de audio", menu=menu_agenda)
-    #Lo mismo para el divisor de audio
 
 class Frame(tk.Frame):
     def __init__(self, ventana=None):
@@ -202,7 +192,41 @@ class Frame(tk.Frame):
         # Actualizar la tabla con los cambios realizados
         self.tabla_puntos(diccionario)
 
-        
+class divisor_audio(tk.Frame):
+    def __init__(self, ventana=None):
+        super().__init__(ventana, width=700, height=500)
+        self.ventana = ventana
+
+        # Etiqueta y botón para seleccionar el archivo de audio
+        etiqueta_archivo = tk.Label(self, text="Archivo de audio:")
+        etiqueta_archivo.pack()
+
+        boton_seleccionar_archivo = tk.Button(self, text="Seleccionar archivo", command=lambda: seleccionar_archivo(self.ruta_texto))
+        boton_seleccionar_archivo.pack()
+
+        self.ruta_texto = tk.Text(self, height=1)
+        self.ruta_texto.pack()
+
+        # Etiqueta y campo de texto para especificar la carpeta de destino
+        etiqueta_carpeta_destino = tk.Label(self, text="Carpeta de destino:")
+        etiqueta_carpeta_destino.pack()
+
+        boton_seleccionar_carpeta = tk.Button(self, text="Seleccionar carpeta", command=lambda: seleccionar_carpeta_destino(self.ruta_carpeta_texto))
+        boton_seleccionar_carpeta.pack()
+
+        self.ruta_carpeta_texto = tk.Text(self, height=1)
+        self.ruta_carpeta_texto.pack()
+
+        # Botón para iniciar la división del audio
+        boton_dividir_audio = tk.Button(self, text="Dividir audio", command=lambda: dividir_audio(self.ruta_carpeta_texto, self.ruta_texto))
+        boton_dividir_audio.pack()
+
+
     
+
+
+
+
+
 
       
