@@ -3,24 +3,27 @@ from tkinter import filedialog # Importamos el módulo filedialog para abrir el 
 from pydub import AudioSegment
 from pydub.silence import split_on_silence
 
-
+global personas # Diccionario que almacena los participantes
 global agenda
+personas = {}
 agenda = {}
+
 def puntos_agenda(punto_general, punto):
     if punto_general not in agenda:
         agenda[punto_general] = set([punto])
     else:
         puntos_especificos = agenda[punto_general]
         if punto in puntos_especificos:
-            return "El punto específico ya existe en el punto general."
+            return agenda
         puntos_especificos.add(punto)
-    return "Punto agregado correctamente."
+    return agenda
 
-#resultado = puntos_agenda("Punto general 1", "Punto específico 1")
-#resultado = puntos_agenda("Punto general 1", "Punto específico 2")
-#resultado = puntos_agenda("Punto general 1", "Punto específico 2")
-#resultado = puntos_agenda("Punto general 2", "Punto específico 3")
-
+def participantes_agenda(carnet,nombre):
+    if carnet not in personas:
+        personas[carnet] = set([nombre])
+    else:
+        tk.messagebox.showwarning("Advertencia", "El participante ya existe.")
+        
 def seleccionar_archivo(ruta_texto):
     """
     Función que permite seleccionar un archivo de audio.

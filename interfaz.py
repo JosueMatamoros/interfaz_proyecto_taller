@@ -1,8 +1,7 @@
 import tkinter as tk
 from tkinter import ttk 
 from tkinter import filedialog # Importamos el módulo filedialog para abrir el explorador de archivos
-from loigica import puntos_agenda, agenda, seleccionar_archivo, seleccionar_carpeta_destino, dividir_audio
-
+from loigica import puntos_agenda, agenda, personas, seleccionar_archivo, seleccionar_carpeta_destino, dividir_audio,participantes_agenda
 
 def barra_menu(ventana):
     barra_menu = tk.Menu(ventana)
@@ -61,13 +60,13 @@ class Frame(tk.Frame):
                                    bg="red", fg="white", cursor="hand2")
         self.boton_cancelar.grid(row=2, column=2, padx=10, pady=10)
         
-        #Boton para editar tabla
+        #Botón para editar tabla
         self.boton_editar = tk.Button(self, text="Editar",state=tk.DISABLED, command=self.editar_punto_ventana)
         self.boton_editar.config(width = 20, font = ("arial",12, "bold"),
                                     bg="green", fg="white", cursor="hand2")
         self.boton_editar.grid(row=4, column=0, padx=10, pady=10)
 
-        #Boton para eliminar contenido de la tabla
+        #Botón para eliminar contenido de la tabla
         self.boton_eliminar = tk.Button(self, text="Eliminar", command=self.eliminar_punto_ventana, state=tk.DISABLED)
         self.boton_eliminar.config(width = 20, font = ("arial",12, "bold"),
                                     bg="red", fg="white", cursor="hand2")
@@ -221,12 +220,63 @@ class divisor_audio(tk.Frame):
         boton_dividir_audio = tk.Button(self, text="Dividir audio", command=lambda: dividir_audio(self.ruta_carpeta_texto, self.ruta_texto))
         boton_dividir_audio.pack()
 
+class participantes(tk.Frame):
+    def __init__(self, ventana=None):
+        super().__init__(ventana, width=700, height=500)
+        self.ventana = ventana
+        self.puntos_participante()
+        self.tabla_puntos(personas)
 
-    
+    def puntos_participante(self):
+        #Labels para la información del participante.
+        self.punto_carnet = tk.Label(self, text="Carnet")
+        self.punto_carnet.config(font = ("arial",12, "bold"))
+        self.punto_carnet.grid(row=0, column=0, padx=10, pady=10)
+
+        self.punto_nombre = tk.Label(self, text="Nombre")
+        self.punto_nombre.config(font = ("arial",12, "bold"))
+        self.punto_nombre.grid(row=1, column=0, padx=10, pady=10)
+
+        #Entradas para la información del participante.
+        self.punto_carnet = tk.StringVar()
+        self.entry_punto_carnet = tk.Entry(self, textvariable = self.punto_carnet)
+        self.entry_punto_carnet.config(width = 50 , font = ("arial",12, ))
+        self.entry_punto_carnet.grid(row=0, column=1, padx=10, pady=10, columnspan=2)
+        
+        self.punto_nombre = tk.StringVar()
+        self.entry_punto_nombre = tk.Entry(self, textvariable = self.punto_nombre)
+        self.entry_punto_nombre.config(width = 50 , font = ("arial",12, ))
+        self.entry_punto_nombre.grid(row=1, column=1, padx=10, pady=10, columnspan=2)
+
+        #Botones para guardar y eliminar participantes.
+        self.boton_guardar= tk.Button(self, text="Guardar", command= self.guardar_participante)
+        self.boton_guardar.config(width = 20, font = ("arial",12, "bold"),
+                                  bg="blue", fg="white", cursor="hand2")
+        self.boton_guardar.grid(row=2, column=0, padx=10, pady=10)
+     
+    def tabla_puntos(self, diccionario:dict):
+        contenedor_tabla = tk.Frame(self)
+        contenedor_tabla.grid(row=3, column=0, columnspan=4)
+
+        self.tabla = ttk.Treeview(contenedor_tabla, columns=("Carnet","Nombre completo"))
+        self.tabla.grid(row=0, column=0, columnspan=4)
+
+        contenedor_tabla.grid_rowconfigure(0, weight=1)
+        contenedor_tabla.grid_columnconfigure(0, weight=1)
+
+        self.tabla.heading("#0", text="Carnet")
+        self.tabla.heading("#1", text="Nombre completo")
+
+        for carnet, nombre in diccionario.items():
+            for subpunto in nombre:
+                self.tabla.insert('', 'end', text=str(carnet), values=(subpunto))
+                
 
 
+        
+    def guardar_participante(self):
+        participantes_agenda(self.punto_carnet.get(), self.punto_nombre.get())
+        #self.deshabilitar_campos()
+        self.tabla_puntos(personas)
 
-
-
-
-      
+        
