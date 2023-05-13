@@ -1,7 +1,6 @@
 import tkinter as tk
 from tkinter import ttk 
-from tkinter import filedialog # Importamos el módulo filedialog para abrir el explorador de archivos
-from loigica import puntos_agenda, agenda, personas, seleccionar_archivo, seleccionar_carpeta_destino, dividir_audio,participantes_agenda
+from loigica import puntos_agenda, eliminar_punto_diccionario, agenda, personas,eliminar_participante, seleccionar_archivo, seleccionar_carpeta_destino, dividir_audio,participantes_agenda
 
 def barra_menu(ventana):
     barra_menu = tk.Menu(ventana)
@@ -138,14 +137,8 @@ class Frame(tk.Frame):
 
         # Eliminar el punto de la tabla
         self.tabla.delete(item)
-        self.eliminar_punto_diccionario(punto_general, punto_especifico, agenda)
+        eliminar_punto_diccionario(punto_general, punto_especifico, agenda)
         self.tabla_puntos(agenda)
-
-    def eliminar_punto_diccionario(self, punto_general, punto_especifico,diccionario):
-        if punto_general in diccionario and punto_especifico in diccionario[punto_general]:
-            diccionario[punto_general].remove(punto_especifico)
-            if len(diccionario[punto_general]) == 0:
-                del diccionario[punto_general]
         
     def editar_punto_ventana(self):
     # Obtener el punto seleccionado en la tabla
@@ -179,7 +172,7 @@ class Frame(tk.Frame):
         # Obtener los nuevos valores del punto editado
         nuevo_punto_general = self.entry_general.get()
         nuevo_punto_especifico = self.entry_especifico.get()
-       
+
         # Modificar el punto específico y la clave
         if punto_general in diccionario and punto_especifico in diccionario[punto_general]:
             conjunto = diccionario[punto_general]
@@ -248,35 +241,100 @@ class participantes(tk.Frame):
         self.entry_punto_nombre.config(width = 50 , font = ("arial",12, ))
         self.entry_punto_nombre.grid(row=1, column=1, padx=10, pady=10, columnspan=2)
 
-        #Botones para guardar y eliminar participantes.
+        #Botón para guardar información del participante.
         self.boton_guardar= tk.Button(self, text="Guardar", command= self.guardar_participante)
         self.boton_guardar.config(width = 20, font = ("arial",12, "bold"),
                                   bg="blue", fg="white", cursor="hand2")
         self.boton_guardar.grid(row=2, column=0, padx=10, pady=10)
+
+        #Botón para eliminar contenido de la tabla.
+        self.boton_eliminar = tk.Button(self, text="Eliminar", command=self.eliminar_personas_ventana)
+        self.boton_eliminar.config(width = 20, font = ("arial",12, "bold"),
+                                    bg="red", fg="white", cursor="hand2")
+        self.boton_eliminar.grid(row=4, column=1, padx=10, pady=10)
+
+        #Botón para editar tabla
+        self.boton_editar = tk.Button(self, text="Editar",command=self.editar_personas_ventana)
+        self.boton_editar.config(width = 20, font = ("arial",12, "bold"),
+                                    bg="green", fg="white", cursor="hand2")
+        self.boton_editar.grid(row=4, column=0, padx=10, pady=10)
      
     def tabla_puntos(self, diccionario:dict):
         contenedor_tabla = tk.Frame(self)
-        contenedor_tabla.grid(row=3, column=0, columnspan=4)
+        contenedor_tabla.grid(row=3, column=0, columnspan=4, sticky="nsew")
 
-        self.tabla = ttk.Treeview(contenedor_tabla, columns=("Carnet","Nombre completo"))
-        self.tabla.grid(row=0, column=0, columnspan=4)
+        self.tabla_participantes = ttk.Treeview(contenedor_tabla, columns=("Carnet","Nombre"))
+        self.tabla_participantes.grid(row=0, column=0, columnspan=4, sticky="nsew")
 
         contenedor_tabla.grid_rowconfigure(0, weight=1)
         contenedor_tabla.grid_columnconfigure(0, weight=1)
 
-        self.tabla.heading("#0", text="Carnet")
-        self.tabla.heading("#1", text="Nombre completo")
+        self.tabla_participantes.heading("#0", text="Carnet")
+        self.tabla_participantes.heading("#1", text="Nombre")
+        self.tabla_participantes.heading("#2", text="Apellido")
 
         for carnet, nombre in diccionario.items():
-            for subpunto in nombre:
-                self.tabla.insert('', 'end', text=str(carnet), values=(subpunto))
+            self.tabla_participantes.insert('', 'end', text=str(carnet), values=(nombre))
+
+        # Asociar eventos de selección en la tabla a la actualización de los botones
+        self.tabla_participantes.bind("<<TreeviewSelect>>")
                 
-
-
-        
     def guardar_participante(self):
         participantes_agenda(self.punto_carnet.get(), self.punto_nombre.get())
-        #self.deshabilitar_campos()
         self.tabla_puntos(personas)
-
+        self.limpiar_entry()
         
+    def limpiar_entry(self):
+        self.punto_carnet.set(" ")
+        self.punto_nombre.set(" ")
+
+    def eliminar_personas_ventana(self):
+        # Obtener una persona y eliminarla de la tabla.
+        item = self.tabla_participantes.selection()[0]
+        carnet = self.tabla_participantes.item(item)['text']
+        eliminar_participante(carnet)
+        self.tabla_puntos(personas)
+        
+    def editar_personas_ventana(self):
+        # Obtener una persona y editarla de la tabla.
+        item = self.tabla_participantes.selection()[0]
+        carnet = self.tabla_participantes.item(item)['text']
+        nombre = self.tabla_participantes.item(item)['values'][0]
+
+        # Crear una nueva ventana de edición
+        ventana_edicion = tk.Toplevel(self)
+        ventana_edicion.geometry("300x150")
+        
+        # Etiquetas y campos de entrada para editar el punto
+        label_carnet = tk.Label(ventana_edicion, text="Punto general:")
+        label_carnet.pack()
+        self.entry_carnet = tk.Entry(ventana_edicion)
+        self.entry_carnet.insert(tk.END, carnet)
+        self.entry_carnet.pack()
+
+
+        label_nombre = tk.Label(ventana_edicion, text="Punto específico:")
+        label_nombre.pack()
+        self.entry_nombre = tk.Entry(ventana_edicion)
+        self.entry_nombre.insert(tk.END, nombre)
+        self.entry_nombre.pack()
+
+        # Botón para guardar los cambios
+        boton_guardar = tk.Button(ventana_edicion, text="Guardar cambios", command=lambda: [self.guardar_cambios(carnet, nombre), ventana_edicion.destroy()])
+        boton_guardar.pack(pady=10, padx=10)
+
+    def guardar_cambios(self, carnet, nombre):
+        nuevo_carnet = self.entry_carnet.get()
+        nuevo_nombre = self.entry_nombre.get()
+
+        if carnet == nuevo_carnet:
+            personas[nuevo_carnet] = nuevo_nombre
+
+        else:
+            if nuevo_carnet not in personas:
+                personas.pop(carnet)
+                personas[nuevo_carnet] = nuevo_nombre
+            else:
+                tk.messagebox.showwarning("Advertencia", "El participante ya existe.")
+
+        self.tabla_puntos(personas)
