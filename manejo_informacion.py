@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from interfaz import Frame,divisor_audio,barra_menu, participantes
+from interfaz import Frame,divisor_audio,barra_menu, participantes, transcripción
 
 class MainApplication(tk.Tk):
     def __init__(self):
@@ -18,7 +18,7 @@ class MainApplication(tk.Tk):
         self.frame_participantes = participantes(self.notebook)
         self.notebook.add(self.frame_participantes, text="Participantes")
 
-        self.frame_eliminar_punto = ttk.Frame(self.notebook)
+        self.frame_eliminar_punto = transcripción(self.notebook)
         self.notebook.add(self.frame_eliminar_punto, text="Transcripción")
 
         self.frame_divisor_audio = divisor_audio(self.notebook)

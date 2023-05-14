@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk 
-from loigica import puntos_agenda, eliminar_punto_diccionario, agenda, personas,eliminar_participante, seleccionar_archivo, seleccionar_carpeta_destino, dividir_audio,participantes_agenda
+from loigica import puntos_agenda, eliminar_punto_diccionario, agenda, personas,eliminar_participante, seleccionar_archivo, seleccionar_carpeta_destino, dividir_audio,participantes_agenda, seleccionar_carpeta_segmentos, convertir_audio_a_texto, corregir_ruta_archivo
 
 def barra_menu(ventana):
     barra_menu = tk.Menu(ventana)
@@ -338,3 +338,116 @@ class participantes(tk.Frame):
                 tk.messagebox.showwarning("Advertencia", "El participante ya existe.")
 
         self.tabla_puntos(personas)
+
+class transcripción(tk.Frame):
+    def __init__(self, ventana=None):
+        super().__init__(ventana, width=700, height=500)
+        self.ventana = ventana
+
+        # Etiqueta y botón para seleccionar el archivo de audio
+        self.boton_seleccionar_archivo = tk.Button(self, text="Seleccionar archivo con segmentos de audio",
+                                                   command=self.mostar_tabla_segmentos)
+        self.boton_seleccionar_archivo.grid(row=0, column=0, padx=5, pady=10)
+
+        self.ruta_texto = tk.Text(self, height=1, width=30)
+        self.ruta_texto.grid(row=0, column=1, columnspan=2, padx=10, pady=10)
+
+        self.tabla = None  # Agregamos el atributo de la tabla
+
+    def almacenar_información(self, parrafo: str):
+        # Ocultar elementos de la interfaz
+        self.tabla.grid_forget()
+        self.boton_transcribir.grid_forget()
+
+        # Label de selección de tema y subtema
+        self.label_general = tk.Label(self, text="Seleccione el tema correspondiente")
+        self.label_general.config(font = ("arial",8, "bold"))
+        self.label_general.grid(row=0, column=0, padx=2, pady=5)
+
+        self.label_especifico = tk.Label(self, text="Seleccione el subtema correspondiente")
+        self.label_especifico.config(font = ("arial",8, "bold"))
+        self.label_especifico.grid(row=1, column=0, padx=2, pady=5)
+
+        # Botones de selección de tema y subtema
+        self.opcion_seleccionada = tk.StringVar(value=list(agenda.keys())[0])  # Valor inicial predeterminado
+        self.opcion_general = tk.OptionMenu(self, self.opcion_seleccionada, *agenda.keys(), command=lambda _: self.actualizar_opcion_especifica())
+        self.opcion_general.grid(row=0, column=1, padx=2, pady=5)
+
+        self.opcion_seleccionada_especifica = tk.StringVar(value=list(agenda[self.opcion_seleccionada.get()])[0])
+        self.opcion_especifica = tk.OptionMenu(self, self.opcion_seleccionada_especifica, *agenda[self.opcion_seleccionada.get()])
+        self.opcion_especifica.grid(row=1, column=1, padx=2, pady=5)
+
+        # Entry para mostrar el texto transcrito
+        self.parrafo = parrafo
+        self.texto_variable = tk.StringVar(value=self.parrafo)
+
+        self.texto_entry = tk.Text(self, height=5, width=30)
+        self.texto_entry.insert(tk.END, self.parrafo)
+        self.texto_entry.grid(row=0, column=4, columnspan=2)
+
+        # Botón para guardar los cambios
+        self.boton_agregar = tk.Button(self, text="Agregar", command=self.guardar_cambios)
+        self.boton_agregar.grid(row=5, column=5, padx=5, pady=10)
+
+
+    def actualizar_opcion_especifica(self):
+        self.opcion_especifica.grid_forget()
+        self.opcion_seleccionada_especifica = tk.StringVar(value=list(agenda[self.opcion_seleccionada.get()])[0])
+        self.opcion_especifica = tk.OptionMenu(self, self.opcion_seleccionada_especifica, *agenda[self.opcion_seleccionada.get()])
+        self.opcion_especifica.grid(row=1, column=1, padx=2, pady=5)
+
+    def guardar_cambios(self):
+        nuevo_parrafo = self.texto_entry.get("1.0", tk.END)
+        self.parrafo = nuevo_parrafo
+
+        self.tabla.grid(row=4, column=0, columnspan=2, padx=10, pady=10)
+        self.boton_transcribir.grid(row=5, column=0, padx=10, pady=10)
+
+    def mostar_tabla_segmentos(self):
+        archivos = seleccionar_carpeta_segmentos(self.ruta_texto)
+        self.tabla_segmentos(archivos)
+
+        # Olvidar botones y entry de la interfaz
+        self.boton_seleccionar_archivo.grid_forget()
+        self.ruta_texto.grid_forget()
+
+         # Botón para iniciar la transcripción
+        self.boton_transcribir = tk.Button(self, text="Transcribir", state=tk.DISABLED,
+                                           command=self.transcribir_audio_seleccionado)
+        self.boton_transcribir.grid(row=4, column=2, padx=10, pady=10)
+
+    def tabla_segmentos(self, archivos):
+        contenedor_tabla = tk.Frame(self)
+        contenedor_tabla.grid(row=4, column=0, columnspan=2, padx=10, pady=10)
+
+        self.tabla = ttk.Treeview(contenedor_tabla, height=10)
+        self.tabla["columns"] = ("Archivo")
+
+        self.tabla.column("#0", width=0, stretch=tk.NO)
+        self.tabla.column("Archivo", anchor=tk.W, width=400)
+
+        self.tabla.heading("#0", text="")
+        self.tabla.heading("Archivo", text="Segmentos de audio")
+
+        for archivo in archivos:
+            self.tabla.insert("", tk.END, text="", values=(archivo))
+
+        self.tabla.bind("<<TreeviewSelect>>", self.on_item_selected)
+        self.tabla.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+
+
+    def on_item_selected(self, event = None):
+        item = self.tabla.selection()
+
+        if item:
+            self.boton_transcribir.config(state=tk.NORMAL)
+        else:
+            self.boton_transcribir.config(state=tk.DISABLED)
+
+    def transcribir_audio_seleccionado(self):
+        selected_item = self.tabla.focus()
+        if selected_item:
+            archivo_seleccionado = self.tabla.item(selected_item)["values"][0]
+            ruta_corregida = corregir_ruta_archivo(archivo_seleccionado)
+            texto_transcrito = convertir_audio_a_texto(ruta_corregida)
+            self.almacenar_información(texto_transcrito)
