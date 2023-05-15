@@ -145,3 +145,11 @@ def dividir_audio(ruta_carpeta_texto, ruta_texto):
         segmento.export(f"{carpeta_destino}/segmento_{i}.wav", format="wav")
 
     tk.messagebox.showinfo("Fin del proceso", "Se ha dividido el audio en segmentos correctamente.")
+
+def eliminar_segmento_usado(elemento,archivo):
+    """
+    Función que permite eliminar un segmento de audio que ya ha sido utilizado.
+    """
+    if elemento in archivo:
+        archivo.remove(elemento)
+    return archivo

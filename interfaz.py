@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk 
-from loigica import puntos_agenda, eliminar_punto_diccionario, agenda, personas,eliminar_participante, seleccionar_archivo, seleccionar_carpeta_destino, dividir_audio,participantes_agenda, seleccionar_carpeta_segmentos, convertir_audio_a_texto, corregir_ruta_archivo
+from loigica import puntos_agenda, eliminar_punto_diccionario, agenda, personas,eliminar_participante, seleccionar_archivo, seleccionar_carpeta_destino, dividir_audio,participantes_agenda, seleccionar_carpeta_segmentos, convertir_audio_a_texto, corregir_ruta_archivo, modificar_participante, eliminar_segmento_usado, reporte
 
 def barra_menu(ventana):
     barra_menu = tk.Menu(ventana)
@@ -46,29 +46,29 @@ class Frame(tk.Frame):
         #Botones 
         self.boton_nuevo = tk.Button(self, text="Nuevo",command=self.habilitar_campos)
         self.boton_nuevo.config(width = 20, font = ("arial",12, "bold"),
-                                bg="green", fg="white", cursor="hand2")
+                                bg="#2196F3" ,activebackground="#BBDEFB", fg="white", cursor="hand2")
         self.boton_nuevo.grid(row=2, column=0, padx=10, pady=10)
        
         self.boton_guardar= tk.Button(self, text="Guardar", command= self.guardar_punto)
         self.boton_guardar.config(width = 20, font = ("arial",12, "bold"),
-                                  bg="blue", fg="white", cursor="hand2")
+                                  bg="#CC33FF", activebackground="#CE93D8", fg="white", cursor="hand2")
         self.boton_guardar.grid(row=2, column=1, padx=10, pady=10)
       
         self.boton_cancelar= tk.Button(self, text="Cancelar",command=self.deshabilitar_campos)
         self.boton_cancelar.config(width = 20, font = ("arial",12, "bold"),
-                                   bg="red", fg="white", cursor="hand2")
+                                   bg="#EF5350", activebackground="#FFCDD2", fg="white", cursor="hand2")
         self.boton_cancelar.grid(row=2, column=2, padx=10, pady=10)
         
         #Botón para editar tabla
         self.boton_editar = tk.Button(self, text="Editar",state=tk.DISABLED, command=self.editar_punto_ventana)
         self.boton_editar.config(width = 20, font = ("arial",12, "bold"),
-                                    bg="green", fg="white", cursor="hand2")
+                                    bg="#2196F3" ,activebackground="#BBDEFB", fg="white", cursor="hand2")
         self.boton_editar.grid(row=4, column=0, padx=10, pady=10)
 
         #Botón para eliminar contenido de la tabla
         self.boton_eliminar = tk.Button(self, text="Eliminar", command=self.eliminar_punto_ventana, state=tk.DISABLED)
         self.boton_eliminar.config(width = 20, font = ("arial",12, "bold"),
-                                    bg="red", fg="white", cursor="hand2")
+                                    bg="#EF5350", activebackground="#FFCDD2", fg="white", cursor="hand2")
         self.boton_eliminar.grid(row=4, column=1, padx=10, pady=10)
 
     def habilitar_campos(self):
@@ -244,7 +244,7 @@ class participantes(tk.Frame):
         #Botón para guardar información del participante.
         self.boton_guardar= tk.Button(self, text="Guardar", command= self.guardar_participante)
         self.boton_guardar.config(width = 20, font = ("arial",12, "bold"),
-                                  bg="blue", fg="white", cursor="hand2")
+                                  fg="white", cursor="hand2",bg="#CC33FF", activebackground="#CE93D8")
         self.boton_guardar.grid(row=2, column=0, padx=10, pady=10)
 
         #Botón para eliminar contenido de la tabla.
@@ -273,7 +273,8 @@ class participantes(tk.Frame):
         self.tabla_participantes.heading("#1", text="Nombre")
         self.tabla_participantes.heading("#2", text="Apellido")
 
-        for carnet, nombre in diccionario.items():
+        for carnet, datos in diccionario.items():
+            nombre = datos["nombre"]
             self.tabla_participantes.insert('', 'end', text=str(carnet), values=(nombre))
 
         # Asociar eventos de selección en la tabla a la actualización de los botones
@@ -328,12 +329,15 @@ class participantes(tk.Frame):
         nuevo_nombre = self.entry_nombre.get()
 
         if carnet == nuevo_carnet:
-            personas[nuevo_carnet] = nuevo_nombre
+            personas[nuevo_carnet]["nombre"] = nuevo_nombre
 
         else:
             if nuevo_carnet not in personas:
                 personas.pop(carnet)
-                personas[nuevo_carnet] = nuevo_nombre
+                personas[nuevo_carnet] = {
+                    "nombre": nombre,
+                    "t_palabras": 0
+                }   
             else:
                 tk.messagebox.showwarning("Advertencia", "El participante ya existe.")
 
@@ -358,24 +362,33 @@ class transcripción(tk.Frame):
         # Ocultar elementos de la interfaz
         self.tabla.grid_forget()
         self.boton_transcribir.grid_forget()
+        self.boton_ver_reportes.grid_forget()
 
         # Label de selección de tema y subtema
         self.label_general = tk.Label(self, text="Seleccione el tema correspondiente")
-        self.label_general.config(font = ("arial",8, "bold"))
-        self.label_general.grid(row=0, column=0, padx=2, pady=5)
+        self.label_general.config(font = ("arial",10, "bold"))
+        self.label_general.grid(row=0, column=0)
 
         self.label_especifico = tk.Label(self, text="Seleccione el subtema correspondiente")
-        self.label_especifico.config(font = ("arial",8, "bold"))
-        self.label_especifico.grid(row=1, column=0, padx=2, pady=5)
+        self.label_especifico.config(font = ("arial",10, "bold"))
+        self.label_especifico.grid(row=1, column=0)
+
+        self.label_persona = tk.Label(self, text="Seleccione el carnet de la persona correspondiente")
+        self.label_persona.config(font = ("arial",10, "bold"))
+        self.label_persona.grid(row=2, column=0)
 
         # Botones de selección de tema y subtema
         self.opcion_seleccionada = tk.StringVar(value=list(agenda.keys())[0])  # Valor inicial predeterminado
         self.opcion_general = tk.OptionMenu(self, self.opcion_seleccionada, *agenda.keys(), command=lambda _: self.actualizar_opcion_especifica())
-        self.opcion_general.grid(row=0, column=1, padx=2, pady=5)
+        self.opcion_general.grid(row=0, column=1)
 
         self.opcion_seleccionada_especifica = tk.StringVar(value=list(agenda[self.opcion_seleccionada.get()])[0])
         self.opcion_especifica = tk.OptionMenu(self, self.opcion_seleccionada_especifica, *agenda[self.opcion_seleccionada.get()])
-        self.opcion_especifica.grid(row=1, column=1, padx=2, pady=5)
+        self.opcion_especifica.grid(row=1, column=1)
+
+        self.opcion_seleccionada_persona = tk.StringVar(value=list(personas.keys())[0])  # Valor inicial predeterminado
+        self.opcion_persona = tk.OptionMenu(self, self.opcion_seleccionada_persona, *personas.keys())
+        self.opcion_persona.grid(row=2, column=1)
 
         # Entry para mostrar el texto transcrito
         self.parrafo = parrafo
@@ -383,12 +396,11 @@ class transcripción(tk.Frame):
 
         self.texto_entry = tk.Text(self, height=5, width=30)
         self.texto_entry.insert(tk.END, self.parrafo)
-        self.texto_entry.grid(row=0, column=4, columnspan=2)
+        self.texto_entry.grid(row=0, column=4, rowspan=3)
 
         # Botón para guardar los cambios
         self.boton_agregar = tk.Button(self, text="Agregar", command=self.guardar_cambios)
-        self.boton_agregar.grid(row=5, column=5, padx=5, pady=10)
-
+        self.boton_agregar.grid(row=5, column=4, padx=5, pady=5)
 
     def actualizar_opcion_especifica(self):
         self.opcion_especifica.grid_forget()
@@ -397,28 +409,39 @@ class transcripción(tk.Frame):
         self.opcion_especifica.grid(row=1, column=1, padx=2, pady=5)
 
     def guardar_cambios(self):
-        nuevo_parrafo = self.texto_entry.get("1.0", tk.END)
-        self.parrafo = nuevo_parrafo
+        punto_general = self.opcion_seleccionada.get()
+        punto_especifico = self.opcion_seleccionada_especifica.get()
+        carnet = self.opcion_seleccionada_persona.get()
+        texto = self.texto_entry.get("1.0", tk.END)
+        modificar_participante(punto_general, punto_especifico, carnet, texto)
+        self.actualizar_tabla_segmentos()
 
-        self.tabla.grid(row=4, column=0, columnspan=2, padx=10, pady=10)
-        self.boton_transcribir.grid(row=5, column=0, padx=10, pady=10)
+        # Terminar proceso de transcripción automaticamnete
+        if len(self.archivos) == 0:
+            self.mostrar_reportes()   
+
+    def actualizar_tabla_segmentos(self):
+        # Olvidar elementos de la interfaz
+        for widget in self.winfo_children():
+            widget.grid_forget()
+
+        # Mostrar elementos de la interfaz
+        self.tabla_segmentos(self.archivos)
 
     def mostar_tabla_segmentos(self):
         archivos = seleccionar_carpeta_segmentos(self.ruta_texto)
-        self.tabla_segmentos(archivos)
+        self.archivos = archivos # Guardar los archivos para usarlos en otros métodos.
+        self.tabla_segmentos(self.archivos)
 
         # Olvidar botones y entry de la interfaz
         self.boton_seleccionar_archivo.grid_forget()
         self.ruta_texto.grid_forget()
 
-         # Botón para iniciar la transcripción
-        self.boton_transcribir = tk.Button(self, text="Transcribir", state=tk.DISABLED,
-                                           command=self.transcribir_audio_seleccionado)
-        self.boton_transcribir.grid(row=4, column=2, padx=10, pady=10)
-
     def tabla_segmentos(self, archivos):
+        #NOTA : Agregar label para la tabla
+
         contenedor_tabla = tk.Frame(self)
-        contenedor_tabla.grid(row=4, column=0, columnspan=2, padx=10, pady=10)
+        contenedor_tabla.grid(row=1, column=0, columnspan=4, padx=10, pady=10)
 
         self.tabla = ttk.Treeview(contenedor_tabla, height=10)
         self.tabla["columns"] = ("Archivo")
@@ -433,9 +456,18 @@ class transcripción(tk.Frame):
             self.tabla.insert("", tk.END, text="", values=(archivo))
 
         self.tabla.bind("<<TreeviewSelect>>", self.on_item_selected)
-        self.tabla.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+        self.tabla.grid(row=4, column=0, padx=10, pady=10, sticky="nsew")
 
+        # Botón para iniciar la transcripción
+        self.boton_transcribir = tk.Button(self, text="Transcribir", state=tk.DISABLED,
+                                           command=self.transcribir_audio_seleccionado)
+        self.boton_transcribir.grid(row=4, column=2, padx=10, pady=10)
 
+        # Botón para iniciar la transcripción
+        self.boton_ver_reportes = tk.Button(self, text="Finalizar",
+                                           command=self.mostrar_reportes)
+        self.boton_ver_reportes.grid(row=4, column=4, padx=10, pady=10)
+    
     def on_item_selected(self, event = None):
         item = self.tabla.selection()
 
@@ -451,3 +483,156 @@ class transcripción(tk.Frame):
             ruta_corregida = corregir_ruta_archivo(archivo_seleccionado)
             texto_transcrito = convertir_audio_a_texto(ruta_corregida)
             self.almacenar_información(texto_transcrito)
+            eliminar_segmento_usado(archivo_seleccionado,self.archivos)
+
+    def mostrar_reportes(self):
+        ventana_reportes = VentanaReportes(self)  # Crear la ventana de reportes
+        ventana_reportes.mainloop()  # Iniciar el bucle de la interfaz
+
+class VentanaReportes(tk.Toplevel):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.title("Reportes")
+        self.geometry("700x500")
+
+        # Crear la barra de menú
+        barra_menu = tk.Menu(self)
+        
+        # Crear los comandos de menú y asociarlos a los frames correspondientes
+        barra_menu.add_command(label="Frame 1", command=self.mostrar_frame1)
+        barra_menu.add_command(label="Frame 2", command=self.mostrar_frame2)
+        barra_menu.add_command(label="Frame 3", command=self.mostrar_frame3)
+        
+        # Asignar la barra de menú a la ventana
+        self.config(menu=barra_menu)
+        
+        # Frame actualmente visible
+        self.frame_actual = None
+        
+        # Mostrar un frame inicial
+        self.mostrar_frame1()
+        
+    def mostrar_frame1(self):
+        if self.frame_actual is not None:
+            self.frame_actual.destroy()
+        
+        self.frame_actual = Frame1(self)
+        self.frame_actual.pack(fill=tk.BOTH, expand=True)
+
+    def mostrar_frame2(self):
+        if self.frame_actual is not None:
+            self.frame_actual.destroy()
+        
+        self.frame_actual = Frame2(self)
+        self.frame_actual.pack(fill=tk.BOTH, expand=True)
+
+    def mostrar_frame3(self):
+        if self.frame_actual is not None:
+            self.frame_actual.destroy()
+        
+        self.frame_actual = Frame3(self)
+        self.frame_actual.pack(fill=tk.BOTH, expand=True)
+
+class Frame1(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent)
+
+        # Crear el widget Listbox
+        listbox = tk.Listbox(self, width=40)
+        listbox.grid(row=0, column=0, sticky="nsew")
+
+        # Crear el widget Scrollbar
+        scrollbar = tk.Scrollbar(self, command=listbox.yview)
+        scrollbar.grid(row=0, column=1, sticky="ns")
+
+        # Asociar el Listbox con el Scrollbar
+        listbox.config(yscrollcommand=scrollbar.set)
+
+        # Agregar elementos a la lista
+        for item in reporte:
+            listbox.insert(tk.END, item)
+
+        # Crear el botón "Finalizar"
+        boton_finalizar = tk.Button(self, text="Salir")
+        boton_finalizar.grid(row=1, column=0, padx=10, pady=10, sticky="sw")
+
+        # Crear el botón "Regresar"
+        boton_regresar = tk.Button(self, text="Regresar")
+        boton_regresar.grid(row=1, column=1, padx=10, pady=10, sticky="se")
+
+        # Configurar el tamaño de las filas y columnas
+        self.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
+
+class Frame2(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent)
+
+        # Crear el widget Listbox
+        listbox = tk.Listbox(self, width=40)
+        listbox.grid(row=0, column=0, sticky="nsew")
+
+        # Crear el widget Scrollbar
+        scrollbar = tk.Scrollbar(self, command=listbox.yview)
+        scrollbar.grid(row=0, column=1, sticky="ns")
+
+        # Asociar el Listbox con el Scrollbar
+        listbox.config(yscrollcommand=scrollbar.set)
+
+        # Agregar elementos a la lista
+        for carnet in personas:
+            total_palabras = personas[carnet]["t_palabras"]
+            total_palabras = str(total_palabras)
+            nombre = personas[carnet]["nombre"]
+            listbox.insert(tk.END, nombre + " -> Total de palabras: " + total_palabras + "\n")
+
+        # Crear el botón "Finalizar"
+        boton_finalizar = tk.Button(self, text="Salir")
+        boton_finalizar.grid(row=1, column=0, padx=10, pady=10, sticky="sw")
+
+        # Crear el botón "Regresar"
+        boton_regresar = tk.Button(self, text="Regresar")
+        boton_regresar.grid(row=1, column=1, padx=10, pady=10, sticky="se")
+
+        # Configurar el tamaño de las filas y columnas
+        self.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
+
+
+class Frame3(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent)
+        # Crear el widget Listbox
+        listbox = tk.Listbox(self, width=40)
+        listbox.grid(row=0, column=0, sticky="nsew")
+
+        # Crear el widget Scrollbar
+        scrollbar = tk.Scrollbar(self, command=listbox.yview)
+        scrollbar.grid(row=0, column=1, sticky="ns")
+
+        # Asociar el Listbox con el Scrollbar
+        listbox.config(yscrollcommand=scrollbar.set)
+
+        # Agregar elementos a la lista
+        for carnet in personas:
+           nombre = personas[carnet]["nombre"]
+           for punto_general in personas[carnet]:
+                if punto_general == "nombre" or punto_general == "t_palabras":
+                    continue
+                else:
+                    for punto_especifico in personas[carnet][punto_general]:
+                        contador = personas[carnet][punto_general][punto_especifico]
+                        contador = str(contador)
+                        listbox.insert(tk.END, nombre + " -> " + punto_general + " -> " + punto_especifico + " Total de participaciones " +contador  )
+               
+        # Crear el botón "Finalizar"
+        boton_finalizar = tk.Button(self, text="Salir")
+        boton_finalizar.grid(row=1, column=0, padx=10, pady=10, sticky="sw")
+
+        # Crear el botón "Regresar"
+        boton_regresar = tk.Button(self, text="Regresar")
+        boton_regresar.grid(row=1, column=1, padx=10, pady=10, sticky="se")
+
+        # Configurar el tamaño de las filas y columnas
+        self.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
