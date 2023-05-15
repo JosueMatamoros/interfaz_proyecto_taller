@@ -191,27 +191,33 @@ class divisor_audio(tk.Frame):
 
         # Etiqueta y botón para seleccionar el archivo de audio
         etiqueta_archivo = tk.Label(self, text="Archivo de audio:")
-        etiqueta_archivo.pack()
+        etiqueta_archivo.grid(row=0, column=0, padx=5, pady=5)
+        etiqueta_archivo.config(font=("arial", 12, "bold"))
 
         boton_seleccionar_archivo = tk.Button(self, text="Seleccionar archivo", command=lambda: seleccionar_archivo(self.ruta_texto))
-        boton_seleccionar_archivo.pack()
+        boton_seleccionar_archivo.grid(row=1, column=0, padx=10, pady=10)
+        boton_seleccionar_archivo.config(width=20, font=("arial", 12, "bold"), bg="#34495E", activebackground="#B0BEC5", fg="white", cursor="hand2")
 
         self.ruta_texto = tk.Text(self, height=1)
-        self.ruta_texto.pack()
+        self.ruta_texto.grid(row=2, column=0, padx=10, pady=10)
 
         # Etiqueta y campo de texto para especificar la carpeta de destino
         etiqueta_carpeta_destino = tk.Label(self, text="Carpeta de destino:")
-        etiqueta_carpeta_destino.pack()
+        etiqueta_carpeta_destino.grid(row=3, column=0, padx=5, pady=5)
+        etiqueta_carpeta_destino.config(font=("arial", 12, "bold"))
 
         boton_seleccionar_carpeta = tk.Button(self, text="Seleccionar carpeta", command=lambda: seleccionar_carpeta_destino(self.ruta_carpeta_texto))
-        boton_seleccionar_carpeta.pack()
+        boton_seleccionar_carpeta.grid(row=4, column=0, padx=10, pady=10)
+        boton_seleccionar_carpeta.config(width=20, font=("arial", 12, "bold"), bg="#34495E", activebackground="#B0BEC5", fg="white", cursor="hand2")
 
         self.ruta_carpeta_texto = tk.Text(self, height=1)
-        self.ruta_carpeta_texto.pack()
+        self.ruta_carpeta_texto.grid(row=5, column=0, padx=10, pady=10)
 
         # Botón para iniciar la división del audio
         boton_dividir_audio = tk.Button(self, text="Dividir audio", command=lambda: dividir_audio(self.ruta_carpeta_texto, self.ruta_texto))
-        boton_dividir_audio.pack()
+        boton_dividir_audio.grid(row=6, column=0, padx=10, pady=10)
+        boton_dividir_audio.config(width=20, font=("arial", 12, "bold"), bg="#34495E", activebackground="#B0BEC5", fg="white", cursor="hand2")
+
 
 class participantes(tk.Frame):
     def __init__(self, ventana=None):
@@ -241,22 +247,26 @@ class participantes(tk.Frame):
         self.entry_punto_nombre.config(width = 50 , font = ("arial",12, ))
         self.entry_punto_nombre.grid(row=1, column=1, padx=10, pady=10, columnspan=2)
 
+        #Validación de entrada de datos.
+        self.punto_carnet.trace("w", self.check_entry_content)
+        self.punto_nombre.trace("w", self.check_entry_content)
+
         #Botón para guardar información del participante.
         self.boton_guardar= tk.Button(self, text="Guardar", command= self.guardar_participante)
         self.boton_guardar.config(width = 20, font = ("arial",12, "bold"),
-                                  fg="white", cursor="hand2",bg="#CC33FF", activebackground="#CE93D8")
+                                  fg="white", cursor="hand2",bg="#CC33FF", activebackground="#CE93D8", state=tk.DISABLED)
         self.boton_guardar.grid(row=2, column=0, padx=10, pady=10)
 
         #Botón para eliminar contenido de la tabla.
         self.boton_eliminar = tk.Button(self, text="Eliminar", command=self.eliminar_personas_ventana)
-        self.boton_eliminar.config(width = 20, font = ("arial",12, "bold"),
-                                    bg="red", fg="white", cursor="hand2")
+        self.boton_eliminar.config(width = 20, font = ("arial",12, "bold"),state=tk.DISABLED,
+                                   bg="#EF5350", activebackground="#FFCDD2", fg="white", cursor="hand2")
         self.boton_eliminar.grid(row=4, column=1, padx=10, pady=10)
 
         #Botón para editar tabla
         self.boton_editar = tk.Button(self, text="Editar",command=self.editar_personas_ventana)
         self.boton_editar.config(width = 20, font = ("arial",12, "bold"),
-                                    bg="green", fg="white", cursor="hand2")
+                                    bg="#2196F3" ,activebackground="#BBDEFB", fg="white", cursor="hand2", state=tk.DISABLED)
         self.boton_editar.grid(row=4, column=0, padx=10, pady=10)
      
     def tabla_puntos(self, diccionario:dict):
@@ -277,13 +287,15 @@ class participantes(tk.Frame):
             nombre = datos["nombre"]
             self.tabla_participantes.insert('', 'end', text=str(carnet), values=(nombre))
 
-        # Asociar eventos de selección en la tabla a la actualización de los botones
-        self.tabla_participantes.bind("<<TreeviewSelect>>")
+
+        # Asociar el controlador de eventos a la tabla
+        self.tabla_participantes.bind('<<TreeviewSelect>>', self.on_item_selected)
                 
     def guardar_participante(self):
         participantes_agenda(self.punto_carnet.get(), self.punto_nombre.get())
         self.tabla_puntos(personas)
         self.limpiar_entry()
+        self.boton_guardar.config(state=tk.DISABLED)
         
     def limpiar_entry(self):
         self.punto_carnet.set(" ")
@@ -295,6 +307,7 @@ class participantes(tk.Frame):
         carnet = self.tabla_participantes.item(item)['text']
         eliminar_participante(carnet)
         self.tabla_puntos(personas)
+        self.desactivar_botones()
         
     def editar_personas_ventana(self):
         # Obtener una persona y editarla de la tabla.
@@ -323,7 +336,7 @@ class participantes(tk.Frame):
         # Botón para guardar los cambios
         boton_guardar = tk.Button(ventana_edicion, text="Guardar cambios", command=lambda: [self.guardar_cambios(carnet, nombre), ventana_edicion.destroy()])
         boton_guardar.pack(pady=10, padx=10)
-
+        
     def guardar_cambios(self, carnet, nombre):
         nuevo_carnet = self.entry_carnet.get()
         nuevo_nombre = self.entry_nombre.get()
@@ -342,6 +355,27 @@ class participantes(tk.Frame):
                 tk.messagebox.showwarning("Advertencia", "El participante ya existe.")
 
         self.tabla_puntos(personas)
+        self.desactivar_botones()
+    
+    def on_item_selected(self, event = None):
+        item = self.tabla_participantes.selection()
+
+        if item:
+            self.boton_eliminar.config(state=tk.NORMAL)  # Activar el botón Eliminar
+            self.boton_editar.config(state=tk.NORMAL)  # Activar el botón Editar
+        else:
+            self.boton_eliminar.config(state=tk.DISABLED)  # Desactivar el botón Eliminar
+            self.boton_editar.config(state=tk.DISABLED)  # Desactivar el botón Editar
+
+    def desactivar_botones(self):
+        self.boton_eliminar.config(state=tk.DISABLED)
+        self.boton_editar.config(state=tk.DISABLED)
+ 
+    def check_entry_content(self,*args):
+        if self.punto_carnet.get() and self.punto_nombre.get():
+            self.boton_guardar.config(state=tk.NORMAL)
+        else:
+            self.boton_guardar.config(state=tk.DISABLED)
 
 class transcripción(tk.Frame):
     def __init__(self, ventana=None):
@@ -349,12 +383,19 @@ class transcripción(tk.Frame):
         self.ventana = ventana
 
         # Etiqueta y botón para seleccionar el archivo de audio
-        self.boton_seleccionar_archivo = tk.Button(self, text="Seleccionar archivo con segmentos de audio",
+        self.boton_seleccionar_archivo = tk.Button(self, text="Seleccionar archivo",
                                                    command=self.mostar_tabla_segmentos)
-        self.boton_seleccionar_archivo.grid(row=0, column=0, padx=5, pady=10)
+        self.boton_seleccionar_archivo.grid(row=0, column=0, padx=5, pady=10,columnspan=2)
+        self.boton_seleccionar_archivo.config(width=30, font=("arial", 12, "bold"), bg="#34495E", activebackground="#B0BEC5", fg="white", cursor="hand2")
 
         self.ruta_texto = tk.Text(self, height=1, width=30)
-        self.ruta_texto.grid(row=0, column=1, columnspan=2, padx=10, pady=10)
+        self.ruta_texto.grid(row=1, column=0, columnspan=2, padx=10, pady=10)
+        self.ruta_texto.config(width = 50 , font = ("arial",12, ))
+
+        # Crear el label con texto rojo, centrado y dos líneas
+        texto = "El audio debe de estar segmentado \n si lo necesita utilice la función dividir audio"
+        self.advertencia = tk.Label(self, text=texto, foreground="red", justify="center", wraplength=200, height=2,font=("arial", 8, "bold"))
+        self.advertencia.grid(row=2, column=0, padx=10, pady=10,ipadx=10, ipady=10,columnspan=2)
 
         self.tabla = None  # Agregamos el atributo de la tabla
 
@@ -365,30 +406,30 @@ class transcripción(tk.Frame):
         self.boton_ver_reportes.grid_forget()
 
         # Label de selección de tema y subtema
+        self.label_persona = tk.Label(self, text="Seleccione el carnet de la persona correspondiente")
+        self.label_persona.config(font = ("arial",10, "bold"))
+        self.label_persona.grid(row=0, column=0,sticky="w")
+
         self.label_general = tk.Label(self, text="Seleccione el tema correspondiente")
         self.label_general.config(font = ("arial",10, "bold"))
-        self.label_general.grid(row=0, column=0)
+        self.label_general.grid(row=1, column=0,sticky="w")
 
         self.label_especifico = tk.Label(self, text="Seleccione el subtema correspondiente")
         self.label_especifico.config(font = ("arial",10, "bold"))
-        self.label_especifico.grid(row=1, column=0)
-
-        self.label_persona = tk.Label(self, text="Seleccione el carnet de la persona correspondiente")
-        self.label_persona.config(font = ("arial",10, "bold"))
-        self.label_persona.grid(row=2, column=0)
+        self.label_especifico.grid(row=2, column=0,sticky="w")
 
         # Botones de selección de tema y subtema
+        self.opcion_seleccionada_persona = tk.StringVar(value=list(personas.keys())[0])  # Valor inicial predeterminado
+        self.opcion_persona = tk.OptionMenu(self, self.opcion_seleccionada_persona, *personas.keys())
+        self.opcion_persona.grid(row=0, column=1,padx=10, pady=10, sticky="ew")
+
         self.opcion_seleccionada = tk.StringVar(value=list(agenda.keys())[0])  # Valor inicial predeterminado
         self.opcion_general = tk.OptionMenu(self, self.opcion_seleccionada, *agenda.keys(), command=lambda _: self.actualizar_opcion_especifica())
-        self.opcion_general.grid(row=0, column=1)
+        self.opcion_general.grid(row=1, column=1,padx=10, pady=10, sticky="ew")
 
         self.opcion_seleccionada_especifica = tk.StringVar(value=list(agenda[self.opcion_seleccionada.get()])[0])
         self.opcion_especifica = tk.OptionMenu(self, self.opcion_seleccionada_especifica, *agenda[self.opcion_seleccionada.get()])
-        self.opcion_especifica.grid(row=1, column=1)
-
-        self.opcion_seleccionada_persona = tk.StringVar(value=list(personas.keys())[0])  # Valor inicial predeterminado
-        self.opcion_persona = tk.OptionMenu(self, self.opcion_seleccionada_persona, *personas.keys())
-        self.opcion_persona.grid(row=2, column=1)
+        self.opcion_especifica.grid(row=2, column=1,padx=10, pady=10, sticky="ew")
 
         # Entry para mostrar el texto transcrito
         self.parrafo = parrafo
@@ -396,11 +437,12 @@ class transcripción(tk.Frame):
 
         self.texto_entry = tk.Text(self, height=5, width=30)
         self.texto_entry.insert(tk.END, self.parrafo)
-        self.texto_entry.grid(row=0, column=4, rowspan=3)
+        self.texto_entry.grid(row=0, column=2, rowspan=3, padx=10, pady=10, sticky="nsew")
 
         # Botón para guardar los cambios
         self.boton_agregar = tk.Button(self, text="Agregar", command=self.guardar_cambios)
-        self.boton_agregar.grid(row=5, column=4, padx=5, pady=5)
+        self.boton_agregar.grid(row=5, column=0, padx=5, pady=5)
+        self.boton_agregar.config(width=20, font=("arial", 12, "bold"), bg="#34495E", activebackground="#B0BEC5", fg="white", cursor="hand2")
 
     def actualizar_opcion_especifica(self):
         self.opcion_especifica.grid_forget()
@@ -436,6 +478,7 @@ class transcripción(tk.Frame):
         # Olvidar botones y entry de la interfaz
         self.boton_seleccionar_archivo.grid_forget()
         self.ruta_texto.grid_forget()
+        self.advertencia.grid_forget()
 
     def tabla_segmentos(self, archivos):
         #NOTA : Agregar label para la tabla
@@ -461,12 +504,14 @@ class transcripción(tk.Frame):
         # Botón para iniciar la transcripción
         self.boton_transcribir = tk.Button(self, text="Transcribir", state=tk.DISABLED,
                                            command=self.transcribir_audio_seleccionado)
-        self.boton_transcribir.grid(row=4, column=2, padx=10, pady=10)
+        self.boton_transcribir.grid(row=4, column=0, padx=10, pady=10)
+        self.boton_transcribir.config(width=20, font=("arial", 12, "bold"), bg="#34495E", activebackground="#B0BEC5", fg="white", cursor="hand2")
 
         # Botón para iniciar la transcripción
         self.boton_ver_reportes = tk.Button(self, text="Finalizar",
                                            command=self.mostrar_reportes)
-        self.boton_ver_reportes.grid(row=4, column=4, padx=10, pady=10)
+        self.boton_ver_reportes.grid(row=4, column=3, padx=10, pady=10)
+        self.boton_ver_reportes.config(width=20, font=("arial", 12, "bold"), bg="#34495E", activebackground="#B0BEC5", fg="white", cursor="hand2")
     
     def on_item_selected(self, event = None):
         item = self.tabla.selection()
