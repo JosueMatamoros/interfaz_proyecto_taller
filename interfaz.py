@@ -3,11 +3,20 @@ from tkinter import ttk
 from loigica import puntos_agenda, eliminar_punto_diccionario, agenda,archivos, personas,eliminar_participante, seleccionar_archivo, seleccionar_carpeta_destino, dividir_audio,participantes_agenda, seleccionar_carpeta_segmentos, convertir_audio_a_texto, corregir_ruta_archivo, modificar_participante, eliminar_segmento_usado, reporte, guardar_diccionario, seleccionar_archivo_texto, cargar_datos
 
 def barra_menu(ventana):
+    """
+    Crea mi barrad e menú y la asocia mi ventana principal.
+    """
     barra_menu = tk.Menu(ventana)
     ventana.config(menu=barra_menu)
 
 class Frame(tk.Frame):
+    """
+    Clase que crea mi frame principal para la interfaz.
+    """
     def __init__(self, ventana=None):
+        """
+        Constructor de la clase Frame.
+        """
         super().__init__(ventana,width=700, height=500)
         self.ventana = ventana
         self.pack()
@@ -21,7 +30,7 @@ class Frame(tk.Frame):
 
     def puntos_agenda(self):
         """
-        Este método crea los elementos de la interfaz para la agenda.
+        Este método crea los elementos de la interfaz para la sección de puntos de agenda.
         """
         #Labels para cada apartado de la agenda
         self.punto_general = tk.Label(self, text="Punto general")
@@ -72,9 +81,14 @@ class Frame(tk.Frame):
         self.boton_eliminar.grid(row=4, column=1, padx=10, pady=10)
 
     def habilitar_campos(self):
+        """
+        Este método habilita los campos de entrada de texto y los botones de guardar y cancelar.
+        """
+        #Se limpian los campos de entrada de texto
         self.punto_general.set(" ")
         self.punto_especifico.set(" ")
 
+        #Se habilitan los campos de entrada de texto
         self.entry_punto_general.config(state="normal")
         self.entry_punto_especifico.config(state="normal")
 
@@ -82,9 +96,14 @@ class Frame(tk.Frame):
         self.boton_cancelar.config(state="normal")
     
     def deshabilitar_campos(self):
+        """
+        Este método deshabilita los campos de entrada de texto y los botones de guardar y cancelar.
+        """
+        #Se limpian los campos de entrada de texto
         self.punto_general.set(" ")
         self.punto_especifico.set(" ")
 
+        #Se deshabilitan los campos de entrada de texto
         self.entry_punto_general.config(state="disabled")
         self.entry_punto_especifico.config(state="disabled")
 
@@ -92,11 +111,20 @@ class Frame(tk.Frame):
         self.boton_cancelar.config(state="disabled")
         
     def guardar_punto(self):
+        """
+        Este método guarda los datos ingresados en los campos de entrada de texto en un diccionario.
+        """
         puntos_agenda(self.punto_general.get(), self.punto_especifico.get())
         self.deshabilitar_campos()
         self.tabla_puntos(agenda)
        
     def tabla_puntos(self, diccionario):
+        """
+        Este método crea una tabla con los datos ingresados en los campos de entrada de texto.
+
+        Args:
+            diccionario (dict): Diccionario que contiene los datos ingresados en los campos de entrada de texto.
+        """
         contenedor_tabla = tk.Frame(self)
         contenedor_tabla.grid(row=3, column=0, columnspan=4, sticky="nsew")
 
@@ -106,22 +134,29 @@ class Frame(tk.Frame):
         contenedor_tabla.grid_rowconfigure(0, weight=1)
         contenedor_tabla.grid_columnconfigure(0, weight=1)
 
+        #Encabezado de la tabla
         self.tabla.heading("#0", text="ID")
         self.tabla.heading("#1", text="Punto general")
         self.tabla.heading("#2", text="Punto específico")
 
-        id_counter = 1
+        #Se insertan los datos en la tabla
+        id_counter = 1 # Contador para el ID de cada punto
         for punto_general, subpuntos in diccionario.items():
             for subpunto in subpuntos:
                 self.tabla.insert('', 'end', text=str(id_counter), values=(punto_general, subpunto))
                 id_counter += 1
 
-         # Asociar eventos de selección en la tabla a la actualización de los botones
+        # Asociar eventos de selección en la tabla a la actualización de los botones
         self.tabla.bind("<<TreeviewSelect>>", self.actualizar_botones)
     
     def actualizar_botones(self, event = None):
+        """
+        Este método actualiza los botones de editar y eliminar según corresponda.
+        """
+        # Obtener el punto seleccionado en la tabla
         item = self.tabla.selection()
 
+        # Habilitar o deshabilitar botones según corresponda
         if item:
             self.boton_eliminar.config(state=tk.NORMAL)
             self.boton_editar.config(state=tk.NORMAL)
@@ -130,17 +165,23 @@ class Frame(tk.Frame):
             self.boton_editar.config(state=tk.DISABLED)
 
     def eliminar_punto_ventana(self):
+        """
+        Este método elimina un punto de la tabla.
+        """
         # Obtener el punto seleccionado en la tabla
         item = self.tabla.selection()[0]
         punto_general = self.tabla.item(item)['values'][0]
         punto_especifico = self.tabla.item(item)['values'][1]
 
         # Eliminar el punto de la tabla
-        self.tabla.delete(item)
+        self.tabla.delete(item) #NO necesario, pero el efecto es mas rápido para el usuario.
         eliminar_punto_diccionario(punto_general, punto_especifico, agenda)
         self.tabla_puntos(agenda)
         
     def editar_punto_ventana(self):
+        """
+        Crea una ventana para editar un punto de la tabla.
+        """
     # Obtener el punto seleccionado en la tabla
         item = self.tabla.selection()[0]
         punto_general = self.tabla.item(item)['values'][0]
@@ -169,6 +210,14 @@ class Frame(tk.Frame):
         boton_guardar.pack(pady=10, padx=10)
 
     def guardar_cambios(self, punto_general, punto_especifico, diccionario):
+        """
+        Esta función guarda los cambios realizados en la ventana de edición.
+
+        Args:
+            punto_general (str): Punto general a editar
+            punto_especifico (str): Punto especifico a editar
+            diccionario (dict): Referencia al diccionario que contiene los puntos
+        """
         # Obtener los nuevos valores del punto editado
         nuevo_punto_general = self.entry_general.get()
         nuevo_punto_especifico = self.entry_especifico.get()
@@ -185,7 +234,13 @@ class Frame(tk.Frame):
         self.tabla_puntos(diccionario)
 
 class divisor_audio(tk.Frame):
+    """
+    Clase que contiene los elementos de la ventana de división de audio.
+    """
     def __init__(self, ventana=None):
+        """
+        Constructor de la clase divisor_audio.
+        """
         super().__init__(ventana, width=700, height=500)
         self.ventana = ventana
 
@@ -219,13 +274,23 @@ class divisor_audio(tk.Frame):
         boton_dividir_audio.config(width=20, font=("arial", 12, "bold"), bg="#34495E", activebackground="#B0BEC5", fg="white", cursor="hand2")
 
 class participantes(tk.Frame):
+    """
+    Clase que crea un frame para los participantes.
+    """
     def __init__(self, ventana=None):
+        """
+        Constructor de la clase participantes.
+        """
         super().__init__(ventana, width=700, height=500)
         self.ventana = ventana
+        #Llama las funciones para crear los elementos de la ventana.
         self.puntos_participante()
         self.tabla_puntos(personas)
 
     def puntos_participante(self):
+        """
+        Crea los elementos de la ventana de participantes.
+        """
         #Labels para la información del participante.
         self.punto_carnet = tk.Label(self, text="Carnet")
         self.punto_carnet.config(font = ("arial",12, "bold"))
@@ -269,46 +334,70 @@ class participantes(tk.Frame):
         self.boton_editar.grid(row=4, column=0, padx=10, pady=10)
      
     def tabla_puntos(self, diccionario:dict):
+        """
+        Crea la tabla de participantes.
+
+        Args:
+            diccionario (dict): Referencia del diccionario de participantes.
+        """
+        #Contenedor de la tabla.
         contenedor_tabla = tk.Frame(self)
         contenedor_tabla.grid(row=3, column=0, columnspan=4, sticky="nsew")
 
+        # Configurar el contenedor de la tabla
         self.tabla_participantes = ttk.Treeview(contenedor_tabla, columns=("Carnet","Nombre"))
         self.tabla_participantes.grid(row=0, column=0, columnspan=4, sticky="nsew")
-
+        
         contenedor_tabla.grid_rowconfigure(0, weight=1)
         contenedor_tabla.grid_columnconfigure(0, weight=1)
 
+        # Encabezado de la tabla
         self.tabla_participantes.heading("#0", text="Carnet")
         self.tabla_participantes.heading("#1", text="Nombre")
         self.tabla_participantes.heading("#2", text="Apellido")
 
+        # Cargar datos de la tabla
         for carnet, datos in diccionario.items():
             nombre = datos["nombre"]
             self.tabla_participantes.insert('', 'end', text=str(carnet), values=(nombre))
-
 
         # Asociar el controlador de eventos a la tabla
         self.tabla_participantes.bind('<<TreeviewSelect>>', self.on_item_selected)
                 
     def guardar_participante(self):
+        """
+        Guarda la información del participante en el diccionario.
+        """
+        # Llama la función, los .get() obtienen el valor de la entrada.
         participantes_agenda(self.punto_carnet.get(), self.punto_nombre.get())
         self.tabla_puntos(personas)
+
+        # Limpia las entradas y se cambia el estado del botón.
         self.limpiar_entry()
         self.boton_guardar.config(state=tk.DISABLED)
         
     def limpiar_entry(self):
+        """
+        Limpia las entradas de la ventana.
+        """
         self.punto_carnet.set(" ")
         self.punto_nombre.set(" ")
 
     def eliminar_personas_ventana(self):
+        """
+        Elimina la información del participante en la tabla.
+        """
         # Obtener una persona y eliminarla de la tabla.
-        item = self.tabla_participantes.selection()[0]
-        carnet = self.tabla_participantes.item(item)['text']
+        item = self.tabla_participantes.selection()[0] #Obtiene el item seleccionado.
+        carnet = self.tabla_participantes.item(item)['text'] #Obtiene el carnet del item seleccionado.
         eliminar_participante(carnet)
-        self.tabla_puntos(personas)
-        self.desactivar_botones()
+        self.tabla_puntos(personas)#Actualiza la tabla.
+        self.desactivar_botones()#Desactiva los botones.
         
     def editar_personas_ventana(self):
+        """
+        Crea una ventana para editar la información del participante.
+        """
         # Obtener una persona y editarla de la tabla.
         item = self.tabla_participantes.selection()[0]
         carnet = self.tabla_participantes.item(item)['text']
@@ -337,12 +426,22 @@ class participantes(tk.Frame):
         boton_guardar.pack(pady=10, padx=10)
         
     def guardar_cambios(self, carnet, nombre):
-        nuevo_carnet = self.entry_carnet.get()
-        nuevo_nombre = self.entry_nombre.get()
+        """
+        Guarda los cambios realizados en la ventana de edición.
 
+        Args:
+            carnet (str): Carnet actual del participante.
+            nombre (str): _Nombre actual del participante.
+        """
+        # Obtener los nuevos valores de la entrada
+        nuevo_carnet = self.entry_carnet.get() #Obtiene el nuevo carnet.
+        nuevo_nombre = self.entry_nombre.get() #Obtiene el nuevo nombre.
+
+        # Modifica el nombre del participante
         if carnet == nuevo_carnet:
             personas[nuevo_carnet]["nombre"] = nuevo_nombre
 
+        # Modifica el carnet del participante o crea uno nuevo.
         else:
             if nuevo_carnet not in personas:
                 personas.pop(carnet)
@@ -353,10 +452,15 @@ class participantes(tk.Frame):
             else:
                 tk.messagebox.showwarning("Advertencia", "El participante ya existe.")
 
+        # Actualiza la tabla y desactiva los botones.
         self.tabla_puntos(personas)
         self.desactivar_botones()
     
     def on_item_selected(self, event = None):
+        """
+        Detecta la selección de un item en la tabla y activa los botones de eliminar y editar.
+        """
+        
         item = self.tabla_participantes.selection()
 
         if item:
@@ -367,21 +471,33 @@ class participantes(tk.Frame):
             self.boton_editar.config(state=tk.DISABLED)  # Desactivar el botón Editar
 
     def desactivar_botones(self):
+        """
+        Desactiva los botones de eliminar y editar.
+        """
         self.boton_eliminar.config(state=tk.DISABLED)
         self.boton_editar.config(state=tk.DISABLED)
  
     def check_entry_content(self,*args):
+        """
+        Verifica que los campos de entrada no estén vacíos y activa el botón de guardar.
+        """
         if self.punto_carnet.get() and self.punto_nombre.get():
             self.boton_guardar.config(state=tk.NORMAL)
         else:
             self.boton_guardar.config(state=tk.DISABLED)
 
 class transcripción(tk.Frame):
+    """
+    Clase que crea un frame de transcripción.
+    """
     def __init__(self, ventana=None):
+        """
+        Constructor de mi clase transcripción.
+        """
         super().__init__(ventana, width=700, height=500)
         self.ventana = ventana
 
-        # Etiqueta y botón para seleccionar el archivo de audio
+        # Etiqueta y botón para seleccionar el archivo de audio.
         self.boton_seleccionar_archivo = tk.Button(self, text="Seleccionar archivo",
                                                    command=self.mostar_tabla_segmentos)
         self.boton_seleccionar_archivo.grid(row=0, column=0, padx=5, pady=10,columnspan=2)
@@ -427,6 +543,9 @@ class transcripción(tk.Frame):
         self.destroy()
 
     def almacenar_información(self, parrafo: str):
+        """
+        Almacena la información de la transcripción en un diccionario.
+        """
         # Ocultar elementos de la interfaz
         self.tabla.grid_forget()
         self.boton_transcribir.grid_forget()
@@ -474,24 +593,36 @@ class transcripción(tk.Frame):
         self.boton_agregar.config(width=20, font=("arial", 12, "bold"), bg="#34495E", activebackground="#B0BEC5", fg="white", cursor="hand2")
 
     def actualizar_opcion_especifica(self):
+        """
+        Actualiza la opción específica de acuerdo a la opción general seleccionada.
+        """
+        # Eliminar el menú de opciones específicas actual.
         self.opcion_especifica.grid_forget()
+
+        # Crear el nuevo menú de opciones específicas nuevo y asigna el valor predeterminado.
         self.opcion_seleccionada_especifica = tk.StringVar(value=list(agenda[self.opcion_seleccionada.get()])[0])
         self.opcion_especifica = tk.OptionMenu(self, self.opcion_seleccionada_especifica, *agenda[self.opcion_seleccionada.get()])
         self.opcion_especifica.grid(row=2, column=1, padx=2, pady=5)
 
     def guardar_cambios(self):
+        """
+        Guarda la información de la transcripción en un diccionario.
+        """
         punto_general = self.opcion_seleccionada.get()
         punto_especifico = self.opcion_seleccionada_especifica.get()
         carnet = self.opcion_seleccionada_persona.get()
         texto = self.texto_entry.get("1.0", tk.END)
-        modificar_participante(punto_general, punto_especifico, carnet, texto)
-        self.actualizar_tabla_segmentos()
+        modificar_participante(punto_general, punto_especifico, carnet, texto) # Agregar información a la base de datos
+        self.actualizar_tabla_segmentos()# Actualizar tabla de segmentos
 
-        # Terminar proceso de transcripción automaticamnete
+        # Terminar proceso de transcripción automáticamente
         if len(self.archivos) == 0:
             self.mostrar_reportes()   
 
     def actualizar_tabla_segmentos(self):
+        """
+        Actualiza la tabla de segmentos de la interfaz.
+        """
         # Olvidar elementos de la interfaz
         for widget in self.winfo_children():
             widget.grid_forget()
@@ -500,6 +631,9 @@ class transcripción(tk.Frame):
         self.tabla_segmentos(self.archivos)
 
     def mostar_tabla_segmentos(self):
+        """
+        Muestra la tabla de segmentos de la interfaz y elimina elementos de la interfaz.
+        """
         archivos = seleccionar_carpeta_segmentos(self.ruta_texto)
         self.archivos = archivos # Guardar los archivos para usarlos en otros métodos.
         self.tabla_segmentos(self.archivos)
@@ -513,6 +647,12 @@ class transcripción(tk.Frame):
         self.ruta_op.grid_forget()
 
     def tabla_segmentos(self, archivos):
+        """
+        Crea la tabla de segmentos de la interfaz con sus respectivos botones.
+
+        Args:
+            archivos (list): Lista con las rutas de los archivos de audio.
+        """
         #NOTA : Agregar label para la tabla
 
         contenedor_tabla = tk.Frame(self)
@@ -524,9 +664,11 @@ class transcripción(tk.Frame):
         self.tabla.column("#0", width=0, stretch=tk.NO)
         self.tabla.column("Archivo", anchor=tk.W, width=400)
 
+        # Encabezado de la tabla.
         self.tabla.heading("#0", text="")
         self.tabla.heading("Archivo", text="Segmentos de audio")
 
+        # Insertar los segmentos en la tabla.
         for archivo in archivos:
             self.tabla.insert("", tk.END, text="", values=(archivo))
 
@@ -539,7 +681,7 @@ class transcripción(tk.Frame):
         self.boton_transcribir.grid(row=4, column=0, padx=10, pady=10)
         self.boton_transcribir.config(width=20, font=("arial", 12, "bold"), bg="#34495E", activebackground="#B0BEC5", fg="white", cursor="hand2")
 
-        # Botón para iniciar la transcripción
+        # Botón para finalizar la transcripción
         self.boton_ver_reportes = tk.Button(self, text="Finalizar",
                                            command=self.mostrar_reportes)
         self.boton_ver_reportes.grid(row=4, column=3, padx=10, pady=10)
@@ -556,6 +698,10 @@ class transcripción(tk.Frame):
         self.ruta_cd.config(width = 50 , font = ("arial",12, ))
 
     def on_item_selected(self, event = None):
+        """
+        Habilita el botón de transcribir cuando se selecciona un item de la tabla.
+        """
+        # Obtener el item seleccionado.
         item = self.tabla.selection()
 
         if item:
@@ -564,22 +710,35 @@ class transcripción(tk.Frame):
             self.boton_transcribir.config(state=tk.DISABLED)
 
     def transcribir_audio_seleccionado(self):
+        """
+        Llama a las funciones necesarias para traducir el audio seleccionado.
+        """
+        # Segmento seleccionado.
         selected_item = self.tabla.focus()
         if selected_item:
             archivo_seleccionado = self.tabla.item(selected_item)["values"][0]
-            ruta_corregida = corregir_ruta_archivo(archivo_seleccionado)
-            texto_transcrito = convertir_audio_a_texto(ruta_corregida)
-            self.almacenar_información(texto_transcrito)
-            eliminar_segmento_usado(archivo_seleccionado,self.archivos)
+            ruta_corregida = corregir_ruta_archivo(archivo_seleccionado) # Corregir la ruta del archivo
+            texto_transcrito = convertir_audio_a_texto(ruta_corregida) # Convertir el audio a texto
+            self.almacenar_información(texto_transcrito) # Almacenar la información en la base de datos
+            eliminar_segmento_usado(archivo_seleccionado,self.archivos) # Eliminar el segmento de la lista de segmentos
 
     def mostrar_reportes(self):
+        """
+        Muestra la ventana de reportes.
+        """
         ventana_reportes = VentanaReportes(self)  # Crear la ventana de reportes
         ventana_reportes.mainloop()  # Iniciar el bucle de la interfaz
 
 
 # Reportes no necesarios. 
 class VentanaReportes(tk.Toplevel):
+    """
+    Crea la ventana de reportes.
+    """
     def __init__(self, parent):
+        """
+        Constructor de la ventana de reportes.
+        """
         super().__init__(parent)
         self.title("Reportes")
         self.geometry("700x500")
@@ -588,9 +747,9 @@ class VentanaReportes(tk.Toplevel):
         barra_menu = tk.Menu(self)
         
         # Crear los comandos de menú y asociarlos a los frames correspondientes
-        barra_menu.add_command(label="Frame 1", command=self.mostrar_frame1)
-        barra_menu.add_command(label="Frame 2", command=self.mostrar_frame2)
-        barra_menu.add_command(label="Frame 3", command=self.mostrar_frame3)
+        barra_menu.add_command(label="Transcripción total", command=self.mostrar_frame1)
+        barra_menu.add_command(label="Total de palabras por persona", command=self.mostrar_frame2)
+        barra_menu.add_command(label="Participaciones por subtema", command=self.mostrar_frame3)
         
         # Asignar la barra de menú a la ventana
         self.config(menu=barra_menu)
@@ -602,28 +761,43 @@ class VentanaReportes(tk.Toplevel):
         self.mostrar_frame1()
         
     def mostrar_frame1(self):
+        """
+        Muestra el frame del primer reporte (totalidad de transcripción).
+        """
         if self.frame_actual is not None:
             self.frame_actual.destroy()
         
-        self.frame_actual = Frame1(self)
-        self.frame_actual.pack(fill=tk.BOTH, expand=True)
+        self.frame_actual = Frame1(self) # Crear el frame
+        self.frame_actual.pack(fill=tk.BOTH, expand=True) # Mostrar el frame
 
     def mostrar_frame2(self):
+        """
+        Muestra el frame del segundo reporte (total de palabras por persona).
+        """
         if self.frame_actual is not None:
             self.frame_actual.destroy()
         
-        self.frame_actual = Frame2(self)
-        self.frame_actual.pack(fill=tk.BOTH, expand=True)
+        self.frame_actual = Frame2(self) # Crear el frame
+        self.frame_actual.pack(fill=tk.BOTH, expand=True) # Mostrar el frame
 
     def mostrar_frame3(self):
+        """
+        Muestra el frame del tercer reporte (participaciones por subtema).
+        """
         if self.frame_actual is not None:
             self.frame_actual.destroy()
         
-        self.frame_actual = Frame3(self)
-        self.frame_actual.pack(fill=tk.BOTH, expand=True)
+        self.frame_actual = Frame3(self) # Crear el frame
+        self.frame_actual.pack(fill=tk.BOTH, expand=True) # Mostrar el frame
 
 class Frame1(tk.Frame):
+    """
+    Frame del primer reporte (totalidad de transcripción).
+    """
     def __init__(self, parent):
+        """
+        Constructor del frame del primer reporte.
+        """
         super().__init__(parent)
 
         # Crear el widget Listbox
@@ -654,7 +828,13 @@ class Frame1(tk.Frame):
         self.columnconfigure(0, weight=1)
 
 class Frame2(tk.Frame):
+    """
+    Frame del segundo reporte (total de palabras por persona).
+    """
     def __init__(self, parent):
+        """
+        Constructor del frame del segundo reporte.
+        """
         super().__init__(parent)
 
         # Crear el widget Listbox
@@ -689,8 +869,15 @@ class Frame2(tk.Frame):
 
 
 class Frame3(tk.Frame):
+    """
+    Frame del tercer reporte (participaciones por subtema).
+    """
     def __init__(self, parent):
+        """
+        Constructor del frame del tercer reporte.
+        """
         super().__init__(parent)
+
         # Crear el widget Listbox
         listbox = tk.Listbox(self, width=40)
         listbox.grid(row=0, column=0, sticky="nsew")
