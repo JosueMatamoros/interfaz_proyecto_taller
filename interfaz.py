@@ -368,13 +368,33 @@ class participantes(tk.Frame):
         """
         Guarda la información del participante en el diccionario.
         """
-        # Llama la función, los .get() obtienen el valor de la entrada.
-        participantes_agenda(self.punto_carnet.get(), self.punto_nombre.get())
-        self.tabla_puntos(personas)
+        # # Llama la función, los .get() obtienen el valor de la entrada.
+        # participantes_agenda(self.punto_carnet.get(), self.punto_nombre.get())
+        # self.tabla_puntos(personas)
 
-        # Limpia las entradas y se cambia el estado del botón.
-        self.limpiar_entry()
-        self.boton_guardar.config(state=tk.DISABLED)
+        # # Limpia las entradas y se cambia el estado del botón.
+        # self.limpiar_entry()
+        # self.boton_guardar.config(state=tk.DISABLED)
+
+        try:
+            punto_carnet = int(self.punto_carnet.get())
+            if len(str(punto_carnet)) == 10:
+                participantes_agenda(self.punto_carnet.get(), self.punto_nombre.get())
+                self.tabla_puntos(personas)
+
+                # Limpia las entradas y se cambia el estado del botón.
+                self.limpiar_entry()
+                self.boton_guardar.config(state=tk.DISABLED)
+                
+            else:
+                # Show an alert
+                tk.messagebox.showwarning("Invalid Input", "El carnet debe de tener 10 digitos")
+        
+        except ValueError:
+            # Show an alert
+            tk.messagebox.showwarning("Invalid Input", "Ingrese un carnet válido, no puede contener letras")
+
+
         
     def limpiar_entry(self):
         """
