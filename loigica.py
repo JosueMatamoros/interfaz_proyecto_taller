@@ -5,12 +5,10 @@ from pydub.silence import split_on_silence
 import speech_recognition as sr
 import os
 
-global personas # Diccionario que almacena los participantes.
-global agenda # Diccionario que almacena los puntos de la agenda.
-global reporte # Lista que almacena los puntos de la agenda.
 personas = {}
 agenda = {}
 reporte = []
+archivos = []
 
 def puntos_agenda(punto_general:str, punto:str):
     # Eliminamos los espacios en blanco al inicio y al final de la cadena y convertimos la primera letra en mayúscula.
@@ -125,6 +123,15 @@ def seleccionar_carpeta_destino(ruta_carpeta_texto):
     ruta_carpeta_texto.insert(tk.END, carpeta_destino)
     return carpeta_destino
 
+def seleccionar_archivo_texto(ruta_archivo_texto):
+    """
+    Función que permite seleccionar un archivo de texto.
+    """
+    archivo_texto = filedialog.askopenfilename(filetypes=[('Archivos de texto', '*.txt')])
+    ruta_archivo_texto.delete("1.0", tk.END)
+    ruta_archivo_texto.insert(tk.END, archivo_texto)
+    return archivo_texto
+
 def dividir_audio(ruta_carpeta_texto, ruta_texto):
     """
     Función que permite dividir un archivo de audio en segmentos de audio.
@@ -153,3 +160,54 @@ def eliminar_segmento_usado(elemento,archivo):
     if elemento in archivo:
         archivo.remove(elemento)
     return archivo
+
+def guardar_diccionario(agenda, personas, reporte, archivos, carpeta):
+    """
+    Función que permite guardar los datos en un archivo de texto.
+
+    Args:
+        agenda (dict): diccionario con los puntos de la agenda.
+        personas (dict): diccionario con los participantes.
+        reporte (list): lista con los datos del reporte.
+        archivos (str): rutas de los segmentos de audio.
+        carpeta (str): ruta donde quiero guardar el archivo de texto.
+    """
+   
+    # Crear un diccionario con los datos
+    datos = {
+        'agenda': agenda,
+        'personas': personas,
+        'reporte': reporte,
+        'archivos': archivos
+    }
+        
+    nombre_archivo = 'datos.txt'
+    ruta_archivo = os.path.join(carpeta, nombre_archivo)
+    
+    with open(ruta_archivo, 'w') as file:
+        file.write(str(datos))
+    
+def cargar_datos(archivo):
+    """
+    Función que permite cargar los datos de un archivo de texto.
+
+    Args:
+        archivo (str): Ruta del archivo de texto.
+
+    Returns:
+        dict: Diccionarios y listas con los datos cargados.
+    """
+    with open(archivo, 'r') as file:
+        datos_str = file.read()
+        datos = eval(datos_str)
+    global agenda
+    global personas
+    global reporte
+    global archivos
+
+    # Asignar los datos a las variables globales
+    agenda = datos['agenda']
+    personas = datos['personas']
+    reporte = datos['reporte']
+    archivos = datos['archivos']
+    return agenda, personas, reporte, archivos

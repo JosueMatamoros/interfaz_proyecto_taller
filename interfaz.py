@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk 
-from loigica import puntos_agenda, eliminar_punto_diccionario, agenda, personas,eliminar_participante, seleccionar_archivo, seleccionar_carpeta_destino, dividir_audio,participantes_agenda, seleccionar_carpeta_segmentos, convertir_audio_a_texto, corregir_ruta_archivo, modificar_participante, eliminar_segmento_usado, reporte
+from loigica import puntos_agenda, eliminar_punto_diccionario, agenda,archivos, personas,eliminar_participante, seleccionar_archivo, seleccionar_carpeta_destino, dividir_audio,participantes_agenda, seleccionar_carpeta_segmentos, convertir_audio_a_texto, corregir_ruta_archivo, modificar_participante, eliminar_segmento_usado, reporte, guardar_diccionario, seleccionar_archivo_texto, cargar_datos
 
 def barra_menu(ventana):
     barra_menu = tk.Menu(ventana)
@@ -218,7 +218,6 @@ class divisor_audio(tk.Frame):
         boton_dividir_audio.grid(row=6, column=0, padx=10, pady=10)
         boton_dividir_audio.config(width=20, font=("arial", 12, "bold"), bg="#34495E", activebackground="#B0BEC5", fg="white", cursor="hand2")
 
-
 class participantes(tk.Frame):
     def __init__(self, ventana=None):
         super().__init__(ventana, width=700, height=500)
@@ -397,13 +396,43 @@ class transcripción(tk.Frame):
         self.advertencia = tk.Label(self, text=texto, foreground="red", justify="center", wraplength=200, height=2,font=("arial", 8, "bold"))
         self.advertencia.grid(row=2, column=0, padx=10, pady=10,ipadx=10, ipady=10,columnspan=2)
 
+        #Etiqueta y botón para seleccionar la carpeta de destino de proyecto ya existente.
+        self.boton_old_proyecto = tk.Button(self, text="Continuar existente",
+                                                   command=self.proyecto_existente)
+        self.boton_old_proyecto.grid(row=3, column=0, padx=5, pady=10,columnspan=2)
+        self.boton_old_proyecto.config(width=30, font=("arial", 12, "bold"), bg="#34495E", activebackground="#B0BEC5", fg="white", cursor="hand2")
+
+        self.ruta_op = tk.Text(self, height=1, width=30)
+        self.ruta_op.grid(row=4, column=0, columnspan=2, padx=10, pady=10)
+        self.ruta_op.config(width = 50 , font = ("arial",12, ))
+
         self.tabla = None  # Agregamos el atributo de la tabla
+    
+    def proyecto_existente(self):
+        ruta = seleccionar_archivo_texto(self.ruta_op)
+        agenda, personas, reporte, archivos = cargar_datos(ruta)
+        self.new_pro_forget_boto()
+        self.tabla_segmentos(archivos)
+
+    def new_pro_forget_boto(self):
+        self.boton_old_proyecto.grid_forget()
+        self.ruta_op.grid_forget()
+        self.boton_seleccionar_archivo.grid_forget()
+        self.ruta_texto.grid_forget()
+        self.advertencia.grid_forget()
+
+    def continuar_mas_tarde(self):
+        ruta = seleccionar_carpeta_destino(self.ruta_cd)
+        guardar_diccionario(agenda,personas,reporte,self.archivos,ruta)
+        self.destroy()
 
     def almacenar_información(self, parrafo: str):
         # Ocultar elementos de la interfaz
         self.tabla.grid_forget()
         self.boton_transcribir.grid_forget()
         self.boton_ver_reportes.grid_forget()
+        self.boton_continuar_después.grid_forget()
+        self.ruta_cd.grid_forget()
 
         # Label de selección de tema y subtema
         self.label_persona = tk.Label(self, text="Seleccione el carnet de la persona correspondiente")
@@ -448,7 +477,7 @@ class transcripción(tk.Frame):
         self.opcion_especifica.grid_forget()
         self.opcion_seleccionada_especifica = tk.StringVar(value=list(agenda[self.opcion_seleccionada.get()])[0])
         self.opcion_especifica = tk.OptionMenu(self, self.opcion_seleccionada_especifica, *agenda[self.opcion_seleccionada.get()])
-        self.opcion_especifica.grid(row=1, column=1, padx=2, pady=5)
+        self.opcion_especifica.grid(row=2, column=1, padx=2, pady=5)
 
     def guardar_cambios(self):
         punto_general = self.opcion_seleccionada.get()
@@ -475,10 +504,13 @@ class transcripción(tk.Frame):
         self.archivos = archivos # Guardar los archivos para usarlos en otros métodos.
         self.tabla_segmentos(self.archivos)
 
+
         # Olvidar botones y entry de la interfaz
         self.boton_seleccionar_archivo.grid_forget()
         self.ruta_texto.grid_forget()
         self.advertencia.grid_forget()
+        self.boton_old_proyecto.grid_forget()
+        self.ruta_op.grid_forget()
 
     def tabla_segmentos(self, archivos):
         #NOTA : Agregar label para la tabla
@@ -512,7 +544,17 @@ class transcripción(tk.Frame):
                                            command=self.mostrar_reportes)
         self.boton_ver_reportes.grid(row=4, column=3, padx=10, pady=10)
         self.boton_ver_reportes.config(width=20, font=("arial", 12, "bold"), bg="#34495E", activebackground="#B0BEC5", fg="white", cursor="hand2")
-    
+        
+        #Etiqueta y botón para continuar el proyecto después.
+        self.boton_continuar_después = tk.Button(self, text="Continuar después",
+                                                   command=self.continuar_mas_tarde)
+        self.boton_continuar_después.grid(row=5, column=0, padx=5, pady=5,columnspan=2)
+        self.boton_continuar_después.config(width=30, font=("arial", 12, "bold"), bg="#34495E", activebackground="#B0BEC5", fg="white", cursor="hand2")
+
+        self.ruta_cd = tk.Text(self, height=0, width=30)
+        self.ruta_cd.grid(row=6, column=0, columnspan=2, padx=5, pady=10)
+        self.ruta_cd.config(width = 50 , font = ("arial",12, ))
+
     def on_item_selected(self, event = None):
         item = self.tabla.selection()
 
@@ -534,6 +576,8 @@ class transcripción(tk.Frame):
         ventana_reportes = VentanaReportes(self)  # Crear la ventana de reportes
         ventana_reportes.mainloop()  # Iniciar el bucle de la interfaz
 
+
+# Reportes no necesarios. 
 class VentanaReportes(tk.Toplevel):
     def __init__(self, parent):
         super().__init__(parent)
